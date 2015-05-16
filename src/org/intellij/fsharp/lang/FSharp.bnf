@@ -30,16 +30,17 @@
              op_Multiply = '*'
 
         ]
+    extends("*.pat") = pat
 }
 
-root ::= rule //for debugging purposes
+root ::= rule //debugging purposes
 
 //A.2.1 Expressions
 implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
-namespace-decl-group ::= namespace global? long-ident module-elems
-named-module ::= module long-ident module-elems
+namespace-decl-group ::= namespace global? long_ident module-elems
+named-module ::= module long_ident module-elems
 anon-module ::= module-elems
-long-ident ::= (ident '.')* ident
+long_ident ::= (ident '.')* ident
 module-elems ::=
    module-func-or-val-defn
 module-func-or-val-defn ::=
@@ -52,28 +53,40 @@ function-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '
 rule ::= pat pattern-guard? '->' expr
 pattern-guard ::= when expr
 pat ::=
-    const                           //constant pattern
-    | long-ident pat-param? pat?    //named pattern
-    | "_"                           //wildcard pattern
-    | pat as ident                  //"as" pattern
-    | pat "|" pat                   //disjunctive pattern
-    | pat '&' pat                   //conjunctive pattern
-    | pat "::" pat                  //"cons" pattern
-    | pat ':' type                  //tuple pattern
-    | '(' pat ')'                   //parenthesized pattern
-    | list-pat                      //list pattern
+    | const_pat          //constant pattern
+    | named_pat         //named pattern
+    | wildcard_pat      //wildcard pattern
+    | as_pat            //"as" pattern
+    | disj_pat          //disjunctive pattern
+    | conj_pat          //conjunctive pattern
+    | cons_pat          //"cons" pattern
+    | tuple_pat         //tuple pattern
+    | paren_pat         //parenthesized pattern
+    | list_pat          //list pattern
     //| array-pat                     //array pattern
     //| record-pat                    //record pattern
-    | ':?' atom-pat                 //dynamic type test pattern
-    | ':?' atom-pat as ident        //dynamic type test pattern
-    | null                          //null-test pattern
-    | attr pat                      //pattern with attributes
-list-pat ::= "[]" | '[' (pat ';')* pat ']'
+//    | ':?' atom-pat                 //dynamic type test pattern
+//    | ':?' atom-pat as ident        //dynamic type test pattern
+//    | null                          //null-test pattern
+    //| attr pat                      //pattern with attributes
+const_pat ::= cons
+named_pat ::= long_ident //pat-param? pat?
+wildcard_pat ::= "_"
+as_pat ::= pat as ident
+disj_pat ::= pat "|" pat
+conj_pat ::= pat "&" pat
+cons_pat ::= pat "::" pat
+tuple_pat ::= pat ":" pat
+paren_pat ::= '(' pat ')'
+list_pat ::= "[]" //| ('[' (pat ';')* pat ']')
+
+pat-param ::=
+
 args-pats ::= atom-pat+
 atom-pat ::=
 
 expr ::= number+
-const ::= number+
+cons ::= number+
 
 typar-defns ::= attr? typar
 
