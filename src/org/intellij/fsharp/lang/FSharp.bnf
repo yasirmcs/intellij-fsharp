@@ -1,9 +1,95 @@
 {
     parserClass = "org.intellij.fsharp.lang.parser.FSharpParser"
+    parserUtilClass = "org.intellij.fsharp.lang.parser.FSharpParserUtil"
+
+    implements = "org.intellij.fsharp.lang.parser.psi.FSharpCompositeElement"
+    extends = "org.intellij.fsharp.lang.parser.psi.impl.FSharpCompositeElementImpl"
+
+    elementTypeHolderClass = "org.intellij.fsharp.lang.parser.psi.FSharpTypes"
+    elementTypePrefix = "FS_"
+    elementTypeClass = "org.intellij.fsharp.lang.parser.psi.FSharpCompositeElementType"
+    tokenTypeClass = "org.intellij.fsharp.lang.parser.psi.FSharpTokenType"
+
     psiClassPrefix = "FSharp"
     psiImplClassSuffix = "Impl"
     psiPackage = "org.intellij.fsharp.lang.parser.psi"
     psiImplPackage = "org.intellij.fsharp.lang.parser.psi.impl"
+    psiImplUtilClass = "org.intellij.fsharp.lang.parser.psi.FSharpPsiImplUtil"
 
+    generateTokenAccessors = true
 
+    tokens = [
+             letter = 'regexp:[A-Za-z]'
+             space = 'regexp:\s+'
+             comment = 'regexp://.*'
+             number = 'regexp:\d+(\.\d*)?'
+             op_Nil = '[]'
+             op_ColonColon = '::'
+             op_Addition = '+'
+             op_Subtraction = '-'
+             op_Multiply = '*'
+
+        ]
 }
+
+root ::= rule //for debugging purposes
+
+//A.2.1 Expressions
+implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
+namespace-decl-group ::= namespace global? long-ident module-elems
+named-module ::= module long-ident module-elems
+anon-module ::= module-elems
+long-ident ::= (ident '.')* ident
+module-elems ::=
+   module-func-or-val-defn
+module-func-or-val-defn ::=
+   attr? let function-defn
+attr ::=
+ident ::= letter (letter | number)* //todo : add proper ident
+function-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
+
+//Patterns
+rule ::= pat pattern-guard? '->' expr
+pattern-guard ::= when expr
+pat ::=
+    const                           //constant pattern
+    | long-ident pat-param? pat?    //named pattern
+    | "_"                           //wildcard pattern
+    | pat as ident                  //"as" pattern
+    | pat "|" pat                   //disjunctive pattern
+    | pat '&' pat                   //conjunctive pattern
+    | pat "::" pat                  //"cons" pattern
+    | pat ':' type                  //tuple pattern
+    | '(' pat ')'                   //parenthesized pattern
+    | list-pat                      //list pattern
+    //| array-pat                     //array pattern
+    //| record-pat                    //record pattern
+    | ':?' atom-pat                 //dynamic type test pattern
+    | ':?' atom-pat as ident        //dynamic type test pattern
+    | null                          //null-test pattern
+    | attr pat                      //pattern with attributes
+list-pat ::= "[]" | '[' (pat ';')* pat ']'
+args-pats ::= atom-pat+
+atom-pat ::=
+
+expr ::= number+
+const ::= number+
+
+typar-defns ::= attr? typar
+
+typar ::=
+    '_' //anonymous variable type
+    | "'" ident //type variable
+    | '^' ident //static variable
+
+
+
+ident-or-op ::= ident | '(' op_name ')' | '(*)'
+
+op_name ::= symbolic-op | range-op-name | active-pattern-op-name
+
+symbolic-op ::= op_Nil | op_ColonColon | op_Addition | op_Subtraction | op_Multiply //todo: remaining operators
+
+access ::= private | internal | public
+
+

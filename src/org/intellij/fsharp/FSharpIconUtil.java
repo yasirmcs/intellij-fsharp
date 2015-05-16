@@ -7,7 +7,7 @@ import javax.swing.*;
 
 public class FSharpIconUtil {
     @NotNull
-    private static final Icon _fsharpFileIcon = IconLoader.getIcon("/img/fsharp.png");
+    private static final Icon _fsharpFileIcon = IconLoader.getIcon("/img/fsharp_fs_file.png");
 
     @NotNull
     public static Icon getFsharpFileIcon() { return _fsharpFileIcon; }
