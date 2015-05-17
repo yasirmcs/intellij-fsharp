@@ -34,88 +34,147 @@
     extends("*.parampat") = parampat
 }
 
-root ::= rule //debugging purposes
+    root ::= rule //debugging purposes
 
-//A.2.1 Expressions
-implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
-namespace-decl-group ::= namespace global? long_ident module-elems
-named-module ::= module long_ident module-elems
-anon-module ::= module-elems
-long_ident ::= (ident '.')* ident
-module-elems ::=
-   module-func-or-val-defn
-module-func-or-val-defn ::=
-   attr? let function-defn
-attr ::=
-ident ::= letter (letter | number)* //todo : add proper ident
-function-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
+    //A.2.1 Program Format
+    implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
+    script-file ::= implementation-file
+    signature-file ::=  (namespace-decl-group-sign+ named-module)+  | anon-module-sign | named-module-sign //todo
+    named-module ::= module long_ident module-elems
+    anon-module ::= module-elems
+    named-module-sign ::= module long_ident module-sign-elems
+    anon-module-sign ::= module-sign-elems
+    script-fragment ::= module-elems
 
-//Pattern matching
-rule ::= pat pattern-guard? '->' expr
-pattern-guard ::= when expr
-pat ::=
-    | const_pat         //constant pattern
-    | named_pat         //named pattern
-    | wildcard_pat      //wildcard pattern
-    | as_pat            //"as" pattern
-    | disj_pat          //disjunctive pattern
-    | conj_pat          //conjunctive pattern
-    | cons_pat          //"cons" pattern
-    | constr_pat        //constrain pattern
-    | tuple_pat         //tuple pattern
-    | paren_pat         //parenthesized pattern
-    | list_pat          //list pattern
-    | array_pat         //array pattern
-    | record_pat        //record pattern
-    | atom_pat          //dynamic type test pattern
-    | atomid_pat        //dynamic type test pattern
-    | null_pat          //null-test pattern
-    | attr_pat          //pattern with attributes
-const_pat ::= cons
-named_pat ::= long_ident pat-param? pat?
-wildcard_pat ::= "_"
-as_pat ::= pat as ident
-disj_pat ::= pat "|" pat
-conj_pat ::= pat "&" pat
-cons_pat ::= pat "::" pat
-constr_pat ::= pat ":" pat
-tuple_pat ::= ('(' pat',')+ pat')'
-paren_pat ::= '(' pat ')'
-list_pat ::= "[]" | ('[' (pat ';')* pat ']')
-array_pat ::= "[| |]" | ("[|" (pat ';')* pat "|]")
-record_pat ::= "{"( field_pat ';')* field_pat "}"
-atom_pat ::= ":?" atom_type
-atomid_pat ::= ":?" atom_type as ident
-null_pat ::= null
-attr_pat ::= todo
-atom_type ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
-field_pat ::= long_ident '=' pat
+    //A.2.1.1 Namespaces and Modules
+    namespace-decl-group ::= namespace long_ident module-elems | namespace global module-elems
+    module-defn ::= attr? module access? ident "=" begin? module-defn-body end?
+    module-defn-body ::= begin module-elems? end
+    module-elem ::=
+        | module-func-or-val-defn
+        | type-defns
+        | exception-defn
+        | module-defn
+        | module-abbrev
+        | import-decl
+        | compiler-directive-decl
+    module-func-or-val-defn ::=
+        | attr? let fun-defn
+        | attr? let val-defn
+        | attr? let rec? fun-or-val-defn
+        | attr? do expr
+    import-decl ::= open long_ident
+    module-abbrev ::= module ident "=" long_ident
+    compiler-directive-decl ::= "#" ident (string)+
+    module-elems ::= (module-elem)+
 
-parampat ::= //pattern parameters
-    | cons_parampat
-    | named_parampat
-    | brack_parampat
-    | tuple_parampat
-    | constr_parampat
-    | quote_parampat
-    | dquote_parampat
-    | null_parampat
-cons_parampat ::= cons
-named_parampat ::= long_ident parampat?
-brack_parampat ::= "[" (parampat ";")* parampat "]"
-tuple_parampat ::= "(" (parampat "'")* parampat ")"
+    //A.2.1.2 Namespaces and Module System
+    namespace-decl-group-sign ::= namespace  long_ident module-sign-elements
+    module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenrio when begin is missing and end is present
+    module-sign-element ::=
+        | val mutable? curried-sig
+        | val val-defn
+        | type type-sign
+        | exception exception-sign
+        | module-sign
+        | module-abbrev
+        | import-decl
+    module-sign-elements ::= begin? (module-sign-element)+ end?
+    module-sign-body ::= begin module-sign-elements end
+    type-sign ::=
+        | abrrev-type-sign
+        | record-type-sign
+        | union-type-sign
+        | anon-type-sign
+        | class-type-sign
+        | struct-type-sign
+        | inteface-type-sign
+        | enum-type-sign
+        | delegate-type-sign
+        | type-ext-sign
+    type-signs ::= type-sign and type-sign //todo: check that
+    type-sign-elem ::=
+        | attr? access? new ":" uncurried-sig
+        | attr? member access? member-sig
+        | attr? abstract access? member-sig
+        | attr? override member-sig
+        | attr? default member-sig
+        | attr? static member access? member-sig
+        | interface type
+    abbrev-type-sign ::= type-name "=" type
+    union-type-sign ::= type-name "=" union-type-cases type-ext-elems-sign?
+    record-type-sign ::= type-name "=" "{" record-fields "}" type-ext-elems-sign?
+    anon-type-sign ::= type-name "=" begin type-elems-sign end
+    class-type-sign ::= type-name "=" class type-elems-sign end
+    struct-type-sign ::= type-name "=" struct type-elems-sign end
+    inteface-type-sign ::= type-name "=" interface type-elems-sign end
+    enum-type-sign ::= type-name "=" enum-type-cases
+    delegate-type-sign ::= type-name "=" delegate-sign
+    type-ext-sign ::= type-name type-ext-elems-sign
+    type-ext-elems-sign ::= with type-elems-sign end
+
+    //A2.2 Types and Type Constraints
+    type ::=
+        | paren_type
+        | func_type
+        | tuple_type
+        | variable_type
+        | named_type
+        | gen_type
+        | open_type
+        | explict_type //todo: what is the correct name for that
+        | array_type
+        | constr_type
+        | subconstr_type
+        | anon_type
+    paren_type ::= "(" type ")"
+    func_type ::= type "->" type
+    tuple_type ::= (type "*")+ type //todo: check it
+    variable_type ::= typar
+    named_type ::= long_ident
+    gen_type ::= long_ident "<" types ">"
+    open_type ::= long_ident "< >"
+    explict_type ::= type long_ident //todo: check that
+    array_type ::= type "[" (",")* "]"
+    constr_type ::= type type-defns
+    subconstr_type ::= typar ":>" type
+    anon_type ::= "#" type
+
+    types ::= (type ",")* type //todo: should this is * or +?
+    atom_type ::= anon_type | variable_type | paren_type | named_type | gen_type
+    typar ::=
+        | '_'           //anonymous variable type
+        | "'" ident     //type variable
+        | '^' ident     //static variable
+    constraint ::=
+        | typar ":>" type   //coersion constraint
+        | typar ":" null    //nullness constraint
+        | static-typars ":" "(" member-sig ")" //member "trait" constraint
+        | typar ":" "(" new ":" unit "->" "'T" //CLI default constructor constraint
+        | typar ":" struct  //CLI non-nullable struct
+        | typar ":" not struct //CLI reference type
+        | typar ":" enum"<"type">" //enum decomposition type
+        | typar ":" unmanaged //unmanaged constraint
+        | typar ":" delegate"<" type "," type ">" //delegate decomposition constraint
+        | typar ":" equality
+        | typar ":" comparison
+    typar-defn ::= attr? typar
+    typar-defns ::= "<" (typar-defn ",")* typar-defn typar-const? ">"
+    typar-const ::= when (constraint and)* constraint //todo: verify that
+    static-typars ::= | "^"ident | "(" ("^"ident or)* "^"ident ")"
+
+    
+
+    long_ident ::= (ident '.')* ident
+    attr ::=
+    ident ::= letter (letter | number)* //todo : add proper ident
+    fun-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
+
+    args-pats ::= atom-pat+
+    expr ::= number+
+    cons ::= number+
 
 
-args-pats ::= atom-pat+
-expr ::= number+
-cons ::= number+
-
-typar-defns ::= attr? typar
-
-typar ::=
-    '_' //anonymous variable type
-    | "'" ident //type variable
-    | '^' ident //static variable
 
 
 
@@ -126,5 +185,71 @@ op_name ::= symbolic-op | range-op-name | active-pattern-op-name
 symbolic-op ::= op_Nil | op_ColonColon | op_Addition | op_Subtraction | op_Multiply //todo: remaining operators
 
 access ::= private | internal | public
+
+
+
+    //Pattern matching
+    rule ::= pat pattern-guard? '->' expr
+    rules ::= "|"? (rule "|")* rule
+    pattern-guard ::= when expr
+    pat ::=
+        | const_pat         //constant pattern
+        | named_pat         //named pattern
+        | wildcard_pat      //wildcard pattern
+        | as_pat            //"as" pattern
+        | disj_pat          //disjunctive pattern
+        | conj_pat          //conjunctive pattern
+        | cons_pat          //"cons" pattern
+        | constr_pat        //constrain pattern
+        | tuple_pat         //tuple pattern
+        | paren_pat         //parenthesized pattern
+        | list_pat          //list pattern
+        | array_pat         //array pattern
+        | record_pat        //record pattern
+        | atom_pat          //dynamic type test pattern
+        | atomid_pat        //dynamic type test pattern
+        | null_pat          //null-test pattern
+        | attr_pat          //pattern with attributes
+    const_pat ::= cons
+    named_pat ::= long_ident parampat? pat?
+    wildcard_pat ::= "_"
+    as_pat ::= pat as ident
+    disj_pat ::= pat "|" pat
+    conj_pat ::= pat "&" pat
+    cons_pat ::= pat "::" pat
+    constr_pat ::= pat ":" type
+    tuple_pat ::= ('(' pat',')+ pat')'
+    paren_pat ::= '(' pat ')'
+    list_pat ::= "[]" | ('[' (pat ';')* pat ']')
+    array_pat ::= "[| |]" | ("[|" (pat ';')* pat "|]")
+    record_pat ::= "{"( field_pat ';')* field_pat "}"
+    atom_pat ::= ":?" atom-type-pat
+    atomid_pat ::= ":?" atom-type-pat as ident
+    null_pat ::= null
+    attr_pat ::= todo
+
+    atom-type-pat ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
+    field_pat ::= long_ident '=' pat
+
+    parampat ::= //pattern parameters
+        | cons_parampat
+        | named_parampat
+        | brack_parampat
+        | tuple_parampat
+        | constr_parampat
+        | quote_parampat
+        | dquote_parampat
+        | null_parampat
+    cons_parampat ::= cons
+    named_parampat ::= long_ident parampat?
+    brack_parampat ::= "[" (parampat ";")* parampat "]"
+    tuple_parampat ::= "(" (parampat "'")* parampat ")"
+    constr_parampat ::= parampat ":" type
+    quote_parampat ::= "<@" expr "@>"
+    dquote_parampat ::= "<@@" expr "@@>"
+    null_parampat ::= null
+
+    pats ::= (pat ",")* pat
+    // end of pattern matching section
 
 
