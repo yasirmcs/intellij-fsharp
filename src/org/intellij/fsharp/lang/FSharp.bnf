@@ -71,7 +71,7 @@
 
     //a.2.1.2 namespaces and module system
     namespace-decl-group-sign ::= namespace  long_ident module-sign-elements
-    module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenrio when begin is missing and end is present
+    module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenario when begin is missing and end is present
     module-sign-element ::=
         | val mutable? curried-sig
         | val val-defn
@@ -217,6 +217,10 @@
         | express_expr
         | weakly-typed_expr
         | static-mem-inv_expr
+//        expr $app expr       // equivalent to "expr(expr)"
+//        expr $sep expr       // equivalent to "expr; expr"
+//        expr $tyapp < types > // equivalent to "expr<types>"
+
     const_expr ::= cons
     paren_expr ::= "("expr")"
     block_expr ::= begin expr end
@@ -248,10 +252,10 @@
     dyn-downcast-coer_expr ::= expr ":?>" type
     static-upcast_expr ::= upcast expr
     dyn-downcast_expr ::= downcast expr
-    fun-defn_expr ::= let func-defn in expr
-    val-defn_expr ::= let val-defn in expr
-    rec-defn_expr ::= let rec fun-or-val-defn in expr
-    det-disp_expr ::= use ident "=" expr in expr
+    fun-defn_expr ::= let func-defn in? expr
+    val-defn_expr ::= let val-defn in? expr
+    rec-defn_expr ::= let rec fun-or-val-defn in? expr
+    det-disp_expr ::= use ident "=" expr in? expr
     func_expr ::= fun args-pats "->" expr
     match-func_expr ::= function rules
     seq-exce_expr ::= expr ";" expr
@@ -269,15 +273,31 @@
     weakly-typed_expr ::= "%%" expr
     static-mem-inv_expr ::= "(" static-typars ":" "(" member-sig ")" expr ")"
 
+    exprs ::= (expr ",")* expr
+    expr-or-range-expr ::= expr | range-expr
+    elif-branches ::= elif-branch+
+    elif-branch ::= elif expr then expr
+    else-branch ::= else expr
+    fun-or-val-defn ::= fun-defn | val-defn
+    fun-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
+    val-defn ::= mutable? access? pat typar-defns? ret-type? "=" expr
+    ret-type ::= type
+    fun-or-val-defns ::= (fun-or-val-defn and)* fun-or-val-defn
+    args-pats ::= atom_pat+
+    field-init ::= long_ident "=" expr
+    field-inits ::= (field-init ";")* field-init
+    obj-constr ::= type expr | type
+    base-call ::= obj-constr | obj-constrj as ident
+    interface-impls ::= interface-impl+
+    interface-impl ::= interface type object-memebers?
+    object-memebers ::= with member-defns end
+    member-defns ::= member-defn+
 
-
-
-
+    //A.2.3.1 Computation and Range Expressions
 
     long_ident  ::= (ident '.')* ident
     attr ::=
     ident ::= letter (letter | number)* //todo : add proper ident
-    fun-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
 
     args-pats ::= atom-pat+
     //expr ::= number+
