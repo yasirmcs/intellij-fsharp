@@ -30,8 +30,9 @@
              op_Multiply = '*'
 
         ]
-    extends("*.pat") = pat
-    extends("*.parampat") = parampat
+    extends(".*_pat") = pat
+    extends(".*_parampat") = parampat
+    extends(".*_expr") = expr
 }
 
     root ::= rule //debugging purposes
@@ -68,7 +69,7 @@
     compiler-directive-decl ::= "#" ident (string)+
     module-elems ::= (module-elem)+
 
-    //A.2.1.2 Namespaces and Module System
+    //a.2.1.2 namespaces and module system
     namespace-decl-group-sign ::= namespace  long_ident module-sign-elements
     module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenrio when begin is missing and end is present
     module-sign-element ::=
@@ -113,7 +114,7 @@
     type-ext-sign ::= type-name type-ext-elems-sign
     type-ext-elems-sign ::= with type-elems-sign end
 
-    //A2.2 Types and Type Constraints
+    //a2.2 types and type constraints
     type ::=
         | paren_type
         | func_type
@@ -150,50 +151,148 @@
         | typar ":>" type   //coersion constraint
         | typar ":" null    //nullness constraint
         | static-typars ":" "(" member-sig ")" //member "trait" constraint
-        | typar ":" "(" new ":" unit "->" "'T" //CLI default constructor constraint
-        | typar ":" struct  //CLI non-nullable struct
-        | typar ":" not struct //CLI reference type
+        | typar ":" "(" new ":" unit "->" "'t" //cli default constructor constraint
+        | typar ":" struct  //cli non-nullable struct
+        | typar ":" not struct //cli reference type
         | typar ":" enum"<"type">" //enum decomposition type
         | typar ":" unmanaged //unmanaged constraint
         | typar ":" delegate"<" type "," type ">" //delegate decomposition constraint
-        | typar ":" equality
-        | typar ":" comparison
+        | typar ":" equality  //a.2.2.1 equality and comparison constraints
+        | typar ":" comparison //a.2.2.1 equality and comparison constraints
     typar-defn ::= attr? typar
     typar-defns ::= "<" (typar-defn ",")* typar-defn typar-const? ">"
     typar-const ::= when (constraint and)* constraint //todo: verify that
     static-typars ::= | "^"ident | "(" ("^"ident or)* "^"ident ")"
 
-    
+    //A.2.3 expressions
+    expr ::=
+        | const_expr
+        | paren_expr
+        | block_expr
+        | lookup_expr
+        | dot-lookup_expr
+        | appl_expr
+        | high-prec_expr
+        | type-appl_expr
+        | infix-appl_expr
+        | prefix-appl_expr
+        | idx-lookup_expr
+        | slice_expr
+        | assgn_expr
+        | tuple_expr
+        | simpl-obj_expr
+        | obj_expr
+        | record_expr
+        | record-clone_expr
+        | list_expr
+        | arr_expr
+        | comptat_expr
+        | comp-list_expr
+        | comp-arr_expr
+        | del_expr
+        | null_expr
+        | type-annot_expr
+        | static-upcast-coer_expr
+        | dyn-type_expr
+        | dyn-downcast-coer_expr
+        | static-upcast_expr
+        | dyn-downcast_expr
+        | fun-defn_expr
+        | val-defn_expr
+        | rec-defn_expr
+        | det-disp_expr
+        | func_expr
+        | match-func_expr
+        | seq-exce_expr
+        | match_expr
+        | try-with_expr
+        | try-fin_expr
+        | cond_expr
+        | while-loop_expr
+        | sim-loop_expr
+        | enum_expr
+        | assert_expr
+        | quote_expr
+        | dquote_expr
+        | express_expr
+        | weakly-typed_expr
+        | static-mem-inv_expr
+    const_expr ::= cons
+    paren_expr ::= "("expr")"
+    block_expr ::= begin expr end
+    lookup_expr ::= long-ident-or-op
+    dot-lookup_expr ::= expr "." long-ident-or-op
+    appl_expr ::= expr expr
+    high-prec_expr ::= expr"("expr")"
+    type-appl_expr ::= expr"<"types">"
+    infix-appl_expr ::= expr infix-op expr
+    prefix-appl_expr ::= prefix-op expr
+    idx-lookup_expr ::= expr".""["expr"]"
+    slice_expr ::= expr".""[" slice-ranges "]"
+    assgn_expr ::= expr "<-" expr
+    tuple_expr ::= (expr ",")+ expr //todo : do we need brackets?
+    simpl-obj_expr ::= new type expr
+    obj_expr ::= "{" new base-call object-memebers interface-impls "}"
+    record_expr ::= "{" field-inits "}"
+    record-clone_expr ::= "{" expr with field-inits "}"
+    list_expr ::= "[" (expr ",")* expr "]"
+    arr_expr ::= "[|" (expr ",")* expr "|]"
+    comptat_expr ::= expr "{" comp-or-range-expr "}"
+    comp-list_expr ::= "[" comp-or-range-expr "]"
+    comp-arr_expr ::= "[|" comp-or-range-expr "|]"
+    del_expr ::= lazy expr
+    null_expr ::= null
+    type-annot_expr ::= expr ":" type
+    static-upcast-coer_expr ::= expr ":>" type
+    dyn-type_expr ::= expr ":?" type
+    dyn-downcast-coer_expr ::= expr ":?>" type
+    static-upcast_expr ::= upcast expr
+    dyn-downcast_expr ::= downcast expr
+    fun-defn_expr ::= let func-defn in expr
+    val-defn_expr ::= let val-defn in expr
+    rec-defn_expr ::= let rec fun-or-val-defn in expr
+    det-disp_expr ::= use ident "=" expr in expr
+    func_expr ::= fun args-pats "->" expr
+    match-func_expr ::= function rules
+    seq-exce_expr ::= expr ";" expr
+    match_expr ::= match expr with rules
+    try-with_expr ::= try expr with rules
+    try-fin_expr ::= try expr finally expr
+    cond_expr ::= if expr then expr elif-branches? else-branch?
+    while-loop_expr ::= while expr do expr done
+    sim-loop_expr ::= for ident "=" expr to expr do expr done
+    enum_expr ::= for pat in expr-or-range-expr do expr done
+    assert_expr ::= assert expr
+    quote_expr ::= "<@" expr "@>"
+    dquote_expr ::= "<@@" expr "@@>"
+    express_expr ::= "%" expr
+    weakly-typed_expr ::= "%%" expr
+    static-mem-inv_expr ::= "(" static-typars ":" "(" member-sig ")" expr ")"
 
-    long_ident ::= (ident '.')* ident
+
+
+
+
+
+    long_ident  ::= (ident '.')* ident
     attr ::=
     ident ::= letter (letter | number)* //todo : add proper ident
     fun-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
 
     args-pats ::= atom-pat+
-    expr ::= number+
+    //expr ::= number+
     cons ::= number+
+    ident-or-op ::= ident | '(' op_name ')' | '(*)'
+    op_name ::= symbolic-op | range-op-name | active-pattern-op-name
+    symbolic-op ::= op_nil | op_coloncolon | op_addition | op_subtraction | op_multiply //todo: remaining operators
+    access ::= private | internal | public
 
-
-
-
-
-ident-or-op ::= ident | '(' op_name ')' | '(*)'
-
-op_name ::= symbolic-op | range-op-name | active-pattern-op-name
-
-symbolic-op ::= op_Nil | op_ColonColon | op_Addition | op_Subtraction | op_Multiply //todo: remaining operators
-
-access ::= private | internal | public
-
-
-
-    //Pattern matching
+    //pattern matching
     rule ::= pat pattern-guard? '->' expr
     rules ::= "|"? (rule "|")* rule
     pattern-guard ::= when expr
     pat ::=
-        | const_pat         //constant pattern
+        | const_pat        //constant pattern
         | named_pat         //named pattern
         | wildcard_pat      //wildcard pattern
         | as_pat            //"as" pattern
