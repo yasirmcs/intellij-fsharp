@@ -31,6 +31,7 @@
 
         ]
     extends("*.pat") = pat
+    extends("*.parampat") = parampat
 }
 
 root ::= rule //debugging purposes
@@ -49,42 +50,63 @@ attr ::=
 ident ::= letter (letter | number)* //todo : add proper ident
 function-defn ::= inline? access? ident-or-op typar-defns? args-pats ret-type? '=' expr
 
-//Patterns
+//Pattern matching
 rule ::= pat pattern-guard? '->' expr
 pattern-guard ::= when expr
 pat ::=
-    | const_pat          //constant pattern
+    | const_pat         //constant pattern
     | named_pat         //named pattern
     | wildcard_pat      //wildcard pattern
     | as_pat            //"as" pattern
     | disj_pat          //disjunctive pattern
     | conj_pat          //conjunctive pattern
     | cons_pat          //"cons" pattern
+    | constr_pat        //constrain pattern
     | tuple_pat         //tuple pattern
     | paren_pat         //parenthesized pattern
     | list_pat          //list pattern
-    //| array-pat                     //array pattern
-    //| record-pat                    //record pattern
-//    | ':?' atom-pat                 //dynamic type test pattern
-//    | ':?' atom-pat as ident        //dynamic type test pattern
-//    | null                          //null-test pattern
-    //| attr pat                      //pattern with attributes
+    | array_pat         //array pattern
+    | record_pat        //record pattern
+    | atom_pat          //dynamic type test pattern
+    | atomid_pat        //dynamic type test pattern
+    | null_pat          //null-test pattern
+    | attr_pat          //pattern with attributes
 const_pat ::= cons
-named_pat ::= long_ident //pat-param? pat?
+named_pat ::= long_ident pat-param? pat?
 wildcard_pat ::= "_"
 as_pat ::= pat as ident
 disj_pat ::= pat "|" pat
 conj_pat ::= pat "&" pat
 cons_pat ::= pat "::" pat
-tuple_pat ::= pat ":" pat
+constr_pat ::= pat ":" pat
+tuple_pat ::= ('(' pat',')+ pat')'
 paren_pat ::= '(' pat ')'
-list_pat ::= "[]" //| ('[' (pat ';')* pat ']')
+list_pat ::= "[]" | ('[' (pat ';')* pat ']')
+array_pat ::= "[| |]" | ("[|" (pat ';')* pat "|]")
+record_pat ::= "{"( field_pat ';')* field_pat "}"
+atom_pat ::= ":?" atom_type
+atomid_pat ::= ":?" atom_type as ident
+null_pat ::= null
+attr_pat ::= todo
+atom_type ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
+field_pat ::= long_ident '=' pat
 
-pat-param ::=
+parampat ::= //pattern parameters
+    | cons_parampat
+    | named_parampat
+    | brack_parampat
+    | tuple_parampat
+    | constr_parampat
+    | quote_parampat
+    | dquote_parampat
+    | null_parampat
+cons_parampat ::= cons
+named_parampat ::= long_ident parampat?
+brack_parampat ::= "[" (parampat ";")* parampat "]"
+tuple_parampat ::= "(" (parampat "'")* parampat ")"
+
 
 args-pats ::= atom-pat+
-atom-pat ::=
-
 expr ::= number+
 cons ::= number+
 
