@@ -33,6 +33,7 @@
     extends(".*_pat") = pat
     extends(".*_parampat") = parampat
     extends(".*_expr") = expr
+    extends(".*_compexpr") = compexpr
 }
 
     root ::= rule //debugging purposes
@@ -114,7 +115,7 @@
     type-ext-sign ::= type-name type-ext-elems-sign
     type-ext-elems-sign ::= with type-elems-sign end
 
-    //a2.2 types and type constraints
+    //A2.2 types and type constraints
     type ::=
         | paren_type
         | func_type
@@ -294,6 +295,70 @@
     member-defns ::= member-defn+
 
     //A.2.3.1 Computation and Range Expressions
+    comp-or-range-expr ::=
+        | compexpr
+        | short-comp-expr
+        | range-expr
+    compexpr ::=
+        | let-bang-bind_compexpr
+        | let-bind_compexpr
+        | do-bang_compexpr
+        | do_compexpr
+        | use-bang_compexpr
+        | use_compexpr
+        | yield-bang_compexpr
+        | yield_compexpr
+        | return-bang_compexpr
+        | return_compexpr
+        | if_compexpr
+        | if-else_compexpr
+        | match_compexpr
+        | try-with_compexpr
+        | try-fin_compexpr
+        | while_compexpr
+        | for_compexpr
+        | for-in_compexpr
+        | seq_compexpr
+        | expr_compexpr
+    let-bang-bind_compexpr ::= let"!" pat "=" expr in compexpr
+    let-bind_compexpr ::= let pat "=" expr in compexpr
+    do-bang_compexpr ::= do"!" pat "=" expr in compexpr
+    do_compexpr ::= do pat "=" expr in compexpr
+    use-bang_compexpr ::= use"!" pat "=" expr in compexpr
+    use_compexpr ::= use pat "=" expr in compexpr
+    yield-bang_compexpr ::= yield"!" expr
+    yield_compexpr ::= yield expr
+    return-bang_compexpr ::= return"!" expr
+    return_compexpr ::= return expr
+    if_compexpr ::= if expr then compexpr
+    if-else_compexpr ::= if expr then expr else compexpr
+    match_compexpr ::= match expr with pat "->" (compexpr "|")* pat "->" compexpr //todo: check that
+    try-with_compexpr ::= try compexpr with pat "->" (compexpr "|")* pat "->" compexpr //todo: check that
+    try-fin_compexpr ::= try compexpr finally expr
+    while_compexpr ::= while expr do compexpr done
+    for_compexpr ::= for ident "=" expr to expr do compexpr done
+    for-in_compexpr ::= for pat in expr-or-range-expr do compexpr done
+    seq_compexpr ::= compexpr ";" compexpr
+    expr_compexpr ::= expr
+
+    comp-rule ::= pat pattern-guard? "->" compexpr
+    comp-rules ::= "|"? (comp-rule "|")* comp-rule
+    short-comp-expr ::= for pat in expr-or-range-expr "->" expr
+    range-expr ::=
+        | expr ".." expr
+        | expr ".." expr ".." expr
+    slice-ranges ::= (slice-range ",")* slice-range
+    slice-range ::=
+        | expr
+        | expr ".."
+        | ".."expr
+        | expr".."expr
+        | "*"
+
+
+
+
+
 
     long_ident  ::= (ident '.')* ident
     attr ::=
