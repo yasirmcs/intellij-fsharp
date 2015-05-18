@@ -22,21 +22,15 @@
              letter = 'regexp:[A-Za-z]'
              space = 'regexp:\s+'
              comment = 'regexp://.*'
-             number = 'regexp:\d+(\.\d*)?'
-             op_Nil = '[]'
-             op_ColonColon = '::'
-             op_Addition = '+'
-             op_Subtraction = '-'
-             op_Multiply = '*'
+    ]
 
-        ]
     extends(".*_pat") = pat
     extends(".*_parampat") = parampat
     extends(".*_expr") = expr
     extends(".*_compexpr") = compexpr
 }
 
-    root ::= rule //debugging purposes
+    root ::= expr //debugging purposes
 
     //A.2.1 Program Format
     implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
@@ -70,7 +64,7 @@
     compiler-directive-decl ::= "#" ident (string)+
     module-elems ::= (module-elem)+
 
-    //a.2.1.2 namespaces and module system
+    //A.2.1.2 namespaces and module system
     namespace-decl-group-sign ::= namespace  long_ident module-sign-elements
     module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenario when begin is missing and end is present
     module-sign-element ::=
@@ -115,7 +109,7 @@
     type-ext-sign ::= type-name type-ext-elems-sign
     type-ext-elems-sign ::= with type-elems-sign end
 
-    //A2.2 types and type constraints
+    //A.2.2 types and type constraints
     type ::=
         | paren_type
         | func_type
@@ -235,7 +229,7 @@
     idx-lookup_expr ::= expr".""["expr"]"
     slice_expr ::= expr".""[" slice-ranges "]"
     assgn_expr ::= expr "<-" expr
-    tuple_expr ::= (expr ",")+ expr //todo : do we need brackets?
+    tuple_expr ::= (expr ",")+ expr //todo ::= do we need brackets?
     simpl-obj_expr ::= new type expr
     obj_expr ::= "{" new base-call object-memebers interface-impls "}"
     record_expr ::= "{" field-inits "}"
@@ -344,9 +338,7 @@
     comp-rule ::= pat pattern-guard? "->" compexpr
     comp-rules ::= "|"? (comp-rule "|")* comp-rule
     short-comp-expr ::= for pat in expr-or-range-expr "->" expr
-    range-expr ::=
-        | expr ".." expr
-        | expr ".." expr ".." expr
+    range-expr ::= expr ".." expr (".." expr)?
     slice-ranges ::= (slice-range ",")* slice-range
     slice-range ::=
         | expr
@@ -355,26 +347,8 @@
         | expr".."expr
         | "*"
 
-
-
-
-
-
-    long_ident  ::= (ident '.')* ident
-    attr ::=
-    ident ::= letter (letter | number)* //todo : add proper ident
-
-    args-pats ::= atom-pat+
-    //expr ::= number+
-    cons ::= number+
-    ident-or-op ::= ident | '(' op_name ')' | '(*)'
-    op_name ::= symbolic-op | range-op-name | active-pattern-op-name
-    symbolic-op ::= op_nil | op_coloncolon | op_addition | op_subtraction | op_multiply //todo: remaining operators
-    access ::= private | internal | public
-
-    //pattern matching
+    //A.2.4 Patterns
     rule ::= pat pattern-guard? '->' expr
-    rules ::= "|"? (rule "|")* rule
     pattern-guard ::= when expr
     pat ::=
         | const_pat        //constant pattern
@@ -407,12 +381,11 @@
     list_pat ::= "[]" | ('[' (pat ';')* pat ']')
     array_pat ::= "[| |]" | ("[|" (pat ';')* pat "|]")
     record_pat ::= "{"( field_pat ';')* field_pat "}"
-    atom_pat ::= ":?" atom-type-pat
-    atomid_pat ::= ":?" atom-type-pat as ident
+    atom_pat ::= ":?" atom-type_pat
+    atomid_pat ::= ":?" atom-type_pat as ident
     null_pat ::= null
     attr_pat ::= todo
-
-    atom-type-pat ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
+    atom-type_pat ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
     field_pat ::= long_ident '=' pat
 
     parampat ::= //pattern parameters
@@ -434,6 +407,118 @@
     null_parampat ::= null
 
     pats ::= (pat ",")* pat
-    // end of pattern matching section
+    field-pats ::= (field_pat ";")* field_pat
+    rules ::= "|"? (rule "|")* rule
+
+    //A.2.5 Type Definitions
+    type-defn ::=
+        | abbrev-type-defn
+        | record-type-defn
+        | union-type-defn
+        | anon-type-defn
+        | class-type-defn
+        | struct-type-defn
+        | interface-type-defn
+        | enum-type-defn
+        | delegate-type-defn
+        | type-ext
+    type-name ::= attr? access? ident typar-defns?
+    abbrev-type-defn ::= type-name "=" type
+    record-type-defn ::= type-name "=" union-type-cases type-ext-elems?
+    union-type-cases ::= "|"? (union-type-case "|")* union-type-case
+    union-type-case ::= attr? union-type-case-data
+    union-type-case-data ::=
+        | ident
+        | ident of (union-type-field "*")* union-type-field
+        | ident ":" uncurried-sig
+    union-type-field ::= type | ident ":" type
+    anon-type-defn ::= type-name primary-constr-args? obj-val? "=" begin class-type-body end
+    record-type-defn ::= type-name "=" "{" record-fields "}" type-ext-elems?
+    record-fields ::= (record-field ";")+ record-field
+    record-field ::= attr? mutable? access? ident ":" type
+    class-type-defn ::= type-name primary-constr-args? obj-val? "=" class class-type-body end
+    as-defn ::= as ident
+    class-type-body ::= begin? class-inhertis-decl? class-func-or-val-defns? type-defns-elems? end?
+    class-inhertis-decl ::= inherit type expr?
+    class-func-or-val-defns ::=
+        | attr? static? let rec? func-or-val-defns
+        | attr? static? do expr
+    struct-type-defn::= type-name primary-constr-args? as-defn? "=" struct struct-type-body end
+    struct-type-body ::= type-defn-elems
+    interface-type-defn ::= type-name '=' interface interface-type-body end
+
+    interface-type-body ::= type-defn-elements
+    exception-defn ::=
+        | attributesopt exception union-type-case-data
+        | attributesopt exception ident = long-ident
+    enum-type-defn ::= type-name '=' enum-type-cases
+    enum-type-cases ::= '|'opt enum-type-case '|' ... '|' enum-type-case
+    enum-type-case ::= ident '=' const
+    delegate-type-defn ::= type-name '=' delegate-sig
+    delegate-sig ::= delegate of uncurried-sig
+    type-extension ::= type-name type-extension-elements
+    type-extension-elements ::= with type-defn-elements end
+    type-defn-element ::=
+        | member-defn
+        | interface-impl
+        | interface-signature
+type-defn-elements ::= type-defn-element ... type-defn-element
+primary-constr-args ::= attributesopt accessopt (simple-pat, ... , simplepat)
+simple-pat :
+    | ident
+    | simple-pat ::= type
+additional-constr-defn :
+      attributesopt accessopt new pat as-defn = additional-constr-expr
+additional-constr-expr :
+      stmt ';' additional-constr-expr
+      additional-constr-expr then expr
+      if expr then additional-constr-expr else additional-constr-expr
+      let val-decls in  additional-constr-expr
+      additional-constr-init-expr
+additional-constr-init-expr :
+      '{' class-inherits-decl field-initializers '}'
+      new type expr
+member-defn :
+      attributesopt staticopt member accessopt method-or-prop-defn
+      attributesopt abstract memberopt accessopt member-sig
+      attributesopt override accessopt method-or-prop-defn
+      attributesopt default accessopt method-or-prop-defn
+      attributesopt staticopt val mutableopt accessopt ident ::= type
+      additional-constr-defn
+method-or-prop-defn :
+      identopt function-defn
+      identopt value-defn
+      identopt ident with function-or-value-defns
+      member ident = exp
+      member ident = exp with get
+      member ident = exp with set
+      member ident = exp with get,set
+      member ident = exp with set,get
+member-sig :
+      ident typar-defnsopt ::= curried-sig
+      ident typar-defnsopt ::= curried-sig with get
+      ident typar-defnsopt ::= curried-sig with set
+      ident typar-defnsopt ::= curried-sig with get,set
+      ident typar-defnsopt ::= curried-sig with set,get
+curried-sig ::= args-spec -> ... -> args-spec -> type
+uncurried-sig ::= args-spec -> type
+args-spec ::= arg-spec * ... * arg-spec
+    arg-spec ::= attributesopt arg-name-specopt type
+arg-name-spec ::= ?opt ident :
+interface-spec ::= interface type
+
+    //todo: needs tidying up
+    long_ident  ::= (ident '.')* ident
+    attr ::=
+    ident ::= letter (letter | number)* //todo ::= add proper ident
+
+    args-pats ::= atom-pat+
+    //expr ::= number+
+    cons ::= number+
+    ident-or-op ::= ident | '(' op_name ')' | '(*)'
+    op_name ::= symbolic-op | range-op-name | active-pattern-op-name
+    symbolic-op ::= op_nil | op_coloncolon | op_addition | op_subtraction | op_multiply //todo: remaining operators
+    access ::= private | internal | public
+
 
 
