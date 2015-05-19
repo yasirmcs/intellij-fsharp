@@ -36,14 +36,14 @@
     implementation-file ::= (namespace-decl-group+ named-module)+ | named-module //| anon-module
     script-file ::= implementation-file
     signature-file ::=  (namespace-decl-group-sign+ named-module)+  | anon-module-sign | named-module-sign //todo
-    named-module ::= module long_ident module-elems
+    named-module ::= module long-ident module-elems
     anon-module ::= module-elems
-    named-module-sign ::= module long_ident module-sign-elems
+    named-module-sign ::= module long-ident module-sign-elems
     anon-module-sign ::= module-sign-elems
     script-fragment ::= module-elems
 
     //A.2.1.1 Namespaces and Modules
-    namespace-decl-group ::= namespace long_ident module-elems | namespace global module-elems
+    namespace-decl-group ::= namespace long-ident module-elems | namespace global module-elems
     module-defn ::= attr? module access? ident "=" begin? module-defn-body end?
     module-defn-body ::= begin module-elems? end
     module-elem ::=
@@ -59,13 +59,13 @@
         | attr? let val-defn
         | attr? let rec? fun-or-val-defn
         | attr? do expr
-    import-decl ::= open long_ident
-    module-abbrev ::= module ident "=" long_ident
+    import-decl ::= open long-ident
+    module-abbrev ::= module ident "=" long-ident
     compiler-directive-decl ::= "#" ident (string)+
     module-elems ::= (module-elem)+
 
     //A.2.1.2 namespaces and module system
-    namespace-decl-group-sign ::= namespace  long_ident module-sign-elements
+    namespace-decl-group-sign ::= namespace  long-ident module-sign-elements
     module-sign ::= module ident "=" begin? module-sign-body end? //todo: check scenario when begin is missing and end is present
     module-sign-element ::=
         | val mutable? curried-sig
@@ -127,10 +127,10 @@
     func_type ::= type "->" type
     tuple_type ::= (type "*")+ type //todo: check it
     variable_type ::= typar
-    named_type ::= long_ident
-    gen_type ::= long_ident "<" types ">"
-    open_type ::= long_ident "< >"
-    explict_type ::= type long_ident //todo: check that
+    named_type ::= long-ident
+    gen_type ::= long-ident "<" types ">"
+    open_type ::= long-ident "< >"
+    explict_type ::= type long-ident //todo: check that
     array_type ::= type "[" (",")* "]"
     constr_type ::= type type-defns
     subconstr_type ::= typar ":>" type
@@ -279,7 +279,7 @@
     ret-type ::= type
     fun-or-val-defns ::= (fun-or-val-defn and)* fun-or-val-defn
     args-pats ::= atom_pat+
-    field-init ::= long_ident "=" expr
+    field-init ::= long-ident "=" expr
     field-inits ::= (field-init ";")* field-init
     obj-constr ::= type expr | type
     base-call ::= obj-constr | obj-constrj as ident
@@ -367,9 +367,9 @@
         | atom_pat          //dynamic type test pattern
         | atomid_pat        //dynamic type test pattern
         | null_pat          //null-test pattern
-        | attr_pat          //pattern with attributes
+        | attr_pat          //pattern with attrs
     const_pat ::= cons
-    named_pat ::= long_ident parampat? pat?
+    named_pat ::= long-ident parampat? pat?
     wildcard_pat ::= "_"
     as_pat ::= pat as ident
     disj_pat ::= pat "|" pat
@@ -385,8 +385,8 @@
     atomid_pat ::= ":?" atom-type_pat as ident
     null_pat ::= null
     attr_pat ::= todo
-    atom-type_pat ::= const_pat | long_ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
-    field_pat ::= long_ident '=' pat
+    atom-type_pat ::= const_pat | long-ident | list_pat | record_pat | array_pat | paren_pat | null_pat | wildcard_pat
+    field_pat ::= long-ident '=' pat
 
     parampat ::= //pattern parameters
         | cons_parampat
@@ -398,7 +398,7 @@
         | dquote_parampat
         | null_parampat
     cons_parampat ::= cons
-    named_parampat ::= long_ident parampat?
+    named_parampat ::= long-ident parampat?
     brack_parampat ::= "[" (parampat ";")* parampat "]"
     tuple_parampat ::= "(" (parampat "'")* parampat ")"
     constr_parampat ::= parampat ":" type
@@ -505,18 +505,62 @@
     arg-name-spec ::= "?"opt ident ":"
     interface-spec ::= interface type
 
-    //todo: needs tidying up
-    long_ident  ::= (ident '.')* ident
-    attr ::=
-    ident ::= letter (letter | number)* //todo ::= add proper ident
+    //A.2.6 Units of Measure
+    measure-literal-atom ::=
+        | long-ident
+        | "(" measure-literal-simp ")"
+    measure-literal-power ::=
+        | measure-literal-atom
+        | measure-literal-atom "^" int32
+    measure-literal-seq ::= measure-literal-power* measure-literal-seq
+    measure-literal-simp ::=
+        | measure-literal-seq
+        | measure-literal-simp "*" measure-literal-simp
+        | measure-literal-simp '/'  measure-literal-simp
+        | "/" measure-literal-simp
+    measure-literal ::= "_" | measure-literal-simp
+    const ::= //todo: include in the main const definition
+        | sbyte "<" measure-literal ">"
+        | int16 "<" measure-literal ">"
+        | int32  "<" measure-literal ">"
+        | int64  "<" measure-literal ">"
+        | ieee32 "<" measure-literal ">"
+        | ieee64 "<" measure-literal ">"
+        | decimal "<" measure-literal ">"
+    measure-atom ::=
+        | typar
+        | long-ident
+        | "(" measure-simp ")"
+    measure-power ::=
+        | measure-atom
+        | measure-atom "^" int32
+    measure-seq ::= measure-power? measure-seq
+    measure-simp ::=
+        | measure-seq
+        | measure-simp * measure-simp
+        | measure-simp "/" measure-simp
+        | "/" measure-simp
+    measure ::= "_" | measure-simp
 
-    args-pats ::= atom-pat+
-    //expr ::= number+
-    cons ::= number+
-    ident-or-op ::= ident | '(' op_name ')' | '(*)'
-    op_name ::= symbolic-op | range-op-name | active-pattern-op-name
-    symbolic-op ::= op_nil | op_coloncolon | op_addition | op_subtraction | op_multiply //todo: remaining operators
-    access ::= private | internal | public
+    //A.2.7	Custom Attributes and Reflection
+    attr ::= attr-target ":"? object-construction
+    attr-set ::= "[<" (attr ";")* attr ">]"
+    attrs ::= attr-set+
+    attr-target ::=
+        | assembly
+        | module
+        | return
+        | field
+        | property
+        | param
+        | type
+        | constructor
+        | event
 
+    //A.3.1	Conditional Compilation
+    start-fsharp-token ::= "(*IF-FSHARP" | "(*F#"
+    end-fsharp-token ::= "ENDIF-FSHARP*)" | "F#*)"
+    start-ml-token ::= "(*IF-OCAML*)"
+    end-ml-token ::= "(*ENDIF-OCAML*)"
 
 
