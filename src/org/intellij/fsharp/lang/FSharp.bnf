@@ -446,13 +446,12 @@
     struct-type-defn::= type-name primary-constr-args? as-defn? "=" struct struct-type-body end
     struct-type-body ::= type-defn-elems
     interface-type-defn ::= type-name '=' interface interface-type-body end
-
     interface-type-body ::= type-defn-elements
     exception-defn ::=
-        | attributesopt exception union-type-case-data
-        | attributesopt exception ident = long-ident
+        | attr? exception union-type-case-data
+        | attr? exception ident '=' long-ident
     enum-type-defn ::= type-name '=' enum-type-cases
-    enum-type-cases ::= '|'opt enum-type-case '|' ... '|' enum-type-case
+    enum-type-cases ::= '|'opt (enum-type-case '|')* enum-type-case
     enum-type-case ::= ident '=' const
     delegate-type-defn ::= type-name '=' delegate-sig
     delegate-sig ::= delegate of uncurried-sig
@@ -462,50 +461,49 @@
         | member-defn
         | interface-impl
         | interface-signature
-type-defn-elements ::= type-defn-element ... type-defn-element
-primary-constr-args ::= attributesopt accessopt (simple-pat, ... , simplepat)
-simple-pat :
-    | ident
-    | simple-pat ::= type
-additional-constr-defn :
-      attributesopt accessopt new pat as-defn = additional-constr-expr
-additional-constr-expr :
-      stmt ';' additional-constr-expr
-      additional-constr-expr then expr
-      if expr then additional-constr-expr else additional-constr-expr
-      let val-decls in  additional-constr-expr
-      additional-constr-init-expr
-additional-constr-init-expr :
-      '{' class-inherits-decl field-initializers '}'
-      new type expr
-member-defn :
-      attributesopt staticopt member accessopt method-or-prop-defn
-      attributesopt abstract memberopt accessopt member-sig
-      attributesopt override accessopt method-or-prop-defn
-      attributesopt default accessopt method-or-prop-defn
-      attributesopt staticopt val mutableopt accessopt ident ::= type
-      additional-constr-defn
-method-or-prop-defn :
-      identopt function-defn
-      identopt value-defn
-      identopt ident with function-or-value-defns
-      member ident = exp
-      member ident = exp with get
-      member ident = exp with set
-      member ident = exp with get,set
-      member ident = exp with set,get
-member-sig :
-      ident typar-defnsopt ::= curried-sig
-      ident typar-defnsopt ::= curried-sig with get
-      ident typar-defnsopt ::= curried-sig with set
-      ident typar-defnsopt ::= curried-sig with get,set
-      ident typar-defnsopt ::= curried-sig with set,get
-curried-sig ::= args-spec -> ... -> args-spec -> type
-uncurried-sig ::= args-spec -> type
-args-spec ::= arg-spec * ... * arg-spec
-    arg-spec ::= attributesopt arg-name-specopt type
-arg-name-spec ::= ?opt ident :
-interface-spec ::= interface type
+    type-defn-elements ::= (type-defn-element)+
+    primary-constr-args ::= attr? access? "(" (simple-pat ",")* simple-pat")"
+    simple-pat ::=
+        | ident
+        | simple-pat ::= type
+    additional-constr-defn ::= attr? access? new pat as-defn "=" additional-constr-expr
+    additional-constr-expr ::= //todo: remove left recursion
+        | stmt ';' additional-constr-expr
+        | additional-constr-expr then expr
+        | if expr then additional-constr-expr else additional-constr-expr
+        | let val-decls in  additional-constr-expr
+        | additional-constr-init-expr
+    additional-constr-init-expr ::=
+        | '{' class-inherits-decl field-initializers '}'
+        | new type expr
+    member-defn ::=
+        | attr? staticopt member access? method-or-prop-defn
+        | attr? abstract memberopt access? member-sig
+        | attr? override access? method-or-prop-defn
+        | attr? default access? method-or-prop-defn
+        | attr? staticopt val mutableopt access? ident ::= type
+        | additional-constr-defn
+    method-or-prop-defn ::=
+        | ident? function-defn
+        | ident? value-defn
+        | ident? ident with function-or-value-defns
+        | member ident "=" exp
+        | member ident "=" exp with get
+        | member ident "=" exp with set
+        | member ident "=" exp with get","set
+        | member ident "=" exp with set","get
+    member-sig ::=
+        | ident typar-defns? ":" curried-sig
+        | ident typar-defns? ":" curried-sig with get
+        | ident typar-defns? ":" curried-sig with set
+        | ident typar-defns? ":" curried-sig with get "," set
+        | ident typar-defns? ":" curried-sig with set "," get
+    curried-sig ::= (args-spec "->")* args-spec "->" type
+    uncurried-sig ::= args-spec "->" type
+    args-spec ::= (arg-spec "*")* arg-spec
+    arg-spec ::= attr? arg-name-specopt type
+    arg-name-spec ::= "?"opt ident ":"
+    interface-spec ::= interface type
 
     //todo: needs tidying up
     long_ident  ::= (ident '.')* ident
